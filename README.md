@@ -12,7 +12,7 @@ Free. As in free beer. Copy, learn and be respectful.
 
 ### Contact
 
-Andreas Pardeike
-Email: andreas@pardeike.net
-Steam: pardeike
+Andreas Pardeike  
+Email: andreas@pardeike.net  
+Steam: pardeike  
 Twitter: @pardeike
