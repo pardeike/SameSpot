@@ -1,0 +1,3 @@
+D:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\Assemblies\SameSpot.dll
+D:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\SameSpot\Source\obj\Debug\SameSpot.dll
+D:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\SameSpot\Assemblies\SameSpot.dll

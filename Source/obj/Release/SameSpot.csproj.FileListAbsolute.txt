@@ -1,0 +1,5 @@
+D:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\SameSpot\Source\bin\Release\SameSpot.dll
+D:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\SameSpot\Source\bin\Release\SameSpot.pdb
+D:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\SameSpot\Source\bin\Release\Harmony.dll
+D:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\SameSpot\Source\obj\Release\SameSpot.dll
+D:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\SameSpot\Source\obj\Release\SameSpot.pdb
