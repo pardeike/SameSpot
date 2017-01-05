@@ -1,16 +1,16 @@
 ## RimWorld SameSpot Mod 
 
-##### About
+### About
 
 Allows multiple colonists to be drafted at the same location
 
-Powered by **Harmony Patch Library**
+Powered by [Harmony Patch Library](https://github.com/pardeike/Harmony)
 
-##### License
+### License
 
 Free. As in free beer. Copy, learn and be respectful.
 
-##### Contact
+### Contact
 
 Andreas Pardeike
 Email: andreas@pardeike.net
