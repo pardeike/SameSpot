@@ -1,0 +1,9 @@
+id = net.pardeike.rimworld.samespot
+
+name = Andreas Pardeike
+email = andreas@pardeike.net
+twitter = pardeike
+steam = pardeike
+
+githubURL = https://github.com/pardeike/SameSpot
+steamURL = http://steamcommunity.com/sharedfiles/filedetails/?id=834903021

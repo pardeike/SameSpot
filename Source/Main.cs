@@ -3,53 +3,56 @@ using Harmony;
 using Verse.AI;
 using RimWorld;
 using System.Linq;
+using System.IO;
+using System.Reflection;
 
 namespace SameSpot
 {
 	[StaticConstructorOnStartup]
+	[HarmonyPatch]
 	class Main
 	{
 		static Main()
 		{
-			Patcher.PatchAll(typeof(Main).Module);
+			var path = GetHarmonyConfigFile();
+			var harmony = HarmonyInstance.RegisterWithFile(path);
+			harmony.PatchAll(typeof(Main).Module);
 		}
-	}
 
-	[HarmonyPatch]
-	public static class Patch
-	{
-		public static void Prepare()
+		static string GetHarmonyConfigFile()
 		{
-			// the predicate we want to patch is some odd named inner class of BestOrderedGotoDestNear
-			// so we look for it semi-manually
-			//
+			var myModule = typeof(Main).Module;
+			ModContentPack modInfo = LoadedModManager.RunningMods
+				.FirstOrDefault(mcp => mcp.assemblies.loadedAssemblies
+					.ToList().SelectMany(a => a.GetLoadedModules()).Contains(myModule));
+			if (modInfo == null) throw new InvalidDataException("Cannot find mod for module " + myModule);
+			var sep = Path.DirectorySeparatorChar;
+			return string.Concat(new object[] { modInfo.RootDir, sep, "About", sep, "Harmony.txt" });
+		}
+
+		static MethodInfo TargetMethod()
+		{
 			var predicateClass = typeof(RCellFinder).GetNestedTypes(AccessTools.all)
 				.FirstOrDefault(t => t.FullName.Contains("BestOrderedGotoDestNear"));
-			if (predicateClass != null)
-			{
-				var predicate = predicateClass.GetMethods(AccessTools.all).FirstOrDefault(m => m.ReturnType == typeof(bool));
-				if (predicate != null)
-					PatchedMethod.Patch(predicate, typeof(Patch).GetMethod("Prefix", AccessTools.all), null);
-			}
+			if (predicateClass == null) return null;
+			var method = predicateClass.GetMethods(AccessTools.all).FirstOrDefault(m => m.ReturnType == typeof(bool));
+			if (method == null)
+				Log.Warning("Error: Cannot find and patch BestOrderedGotoDestNear.Predicate. SameSpot mod won't work, sorry.");
+			return method;
 		}
 
-		public static bool Prefix(object instance, ref bool result, ref IntVec3 c)
+		static void Postfix(object instance, ref bool result, ref IntVec3 cell)
 		{
-			var trv = Traverse.Create(instance);
-			var map = trv.Field("map").GetValue<Map>();
-			var searcher = trv.Field("searcher").GetValue<Pawn>();
-
-			var selector = Find.Selector;
-			var singleColonist = (selector.SelectedObjects.Count == 1 && selector.SelectedObjects[0] is Pawn);
-
-			result = (
-				// disabling DestinationIsReserved() for single selected colonist allows for multi-colonist-same-spot-cheese orders!
-				(singleColonist || !map.pawnDestinationManager.DestinationIsReserved(c, searcher)) &&
-				c.Standable(map) &&
-				searcher.CanReach(c, PathEndMode.OnCell, Danger.Deadly, false, TraverseMode.ByPawn)
-			);
-
-			return false;
+			if (result == false)
+			{
+				var selector = Find.Selector;
+				var isSingleColonistSelected = (selector.SelectedObjects.Count == 1 && selector.SelectedObjects[0] is Pawn);
+				if (isSingleColonistSelected)
+				{
+					var searcher = Traverse.Create(instance).Field("searcher").GetValue<Pawn>();
+					result = searcher.CanReach(cell, PathEndMode.OnCell, Danger.Deadly, false, TraverseMode.ByPawn);
+				}
+			}
 		}
 	}
 }
