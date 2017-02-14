@@ -12,7 +12,7 @@ namespace SameSpot
 	{
 		static Main()
 		{
-			var harmony = HarmonyInstance.Create("net.pardeike.rimworld.mod.camera+");
+			var harmony = HarmonyInstance.Create("net.pardeike.rimworld.mod.samespot");
 			var processor = new HarmonyProcessor(Priority.Normal, new string[0], new string[0]);
 			processor.AddILProcessor(new MethodReplacer(
 				AccessTools.Method(typeof(PawnDestinationManager), "DestinationIsReserved", new Type[] { typeof(IntVec3), typeof(Pawn) }),
