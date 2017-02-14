@@ -4,6 +4,8 @@ using RimWorld;
 using System.Linq;
 using Harmony.ILCopying;
 using System;
+using System.Reflection;
+using UnityEngine;
 
 namespace SameSpot
 {
@@ -13,7 +15,35 @@ namespace SameSpot
 		static Main()
 		{
 			var harmony = HarmonyInstance.Create("net.pardeike.rimworld.mod.samespot");
-			var processor = new HarmonyProcessor(Priority.Normal, new string[0], new string[0]);
+			harmony.PatchAll(Assembly.GetExecutingAssembly());
+		}
+	}
+
+	[HarmonyPatch]
+	static class BestOrderedGotoDestNearPatcher
+	{
+		static bool DestinationIsReserved(this PawnDestinationManager instance, IntVec3 c, Pawn searcher)
+		{
+			if (Find.Selector.SelectedObjects.Count() == 1) return false;
+			if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) return false;
+			return instance.DestinationIsReserved(c, searcher);
+		}
+
+		static bool Standable(this IntVec3 c, Map map)
+		{
+			return true;
+		}
+
+		static MethodBase TargetMethod()
+		{
+			var predicateClass = typeof(RCellFinder).GetNestedTypes(AccessTools.all)
+				.FirstOrDefault(t => t.FullName.Contains("BestOrderedGotoDestNear"));
+			return predicateClass.GetMethods(AccessTools.all).FirstOrDefault(m => m.ReturnType == typeof(bool));
+		}
+
+		static HarmonyProcessor Processors(MethodBase original)
+		{
+			var processor = new HarmonyProcessor();
 			processor.AddILProcessor(new MethodReplacer(
 				AccessTools.Method(typeof(PawnDestinationManager), "DestinationIsReserved", new Type[] { typeof(IntVec3), typeof(Pawn) }),
 				AccessTools.Method(typeof(BestOrderedGotoDestNearPatcher), "DestinationIsReserved")
@@ -22,24 +52,7 @@ namespace SameSpot
 				AccessTools.Method(typeof(GenGrid), "Standable"),
 				AccessTools.Method(typeof(BestOrderedGotoDestNearPatcher), "Standable")
 			));
-
-			var predicateClass = typeof(RCellFinder).GetNestedTypes(AccessTools.all)
-				.FirstOrDefault(t => t.FullName.Contains("BestOrderedGotoDestNear"));
-			var original = predicateClass.GetMethods(AccessTools.all).FirstOrDefault(m => m.ReturnType == typeof(bool));
-			harmony.Patch(original, null, null, processor);
-		}
-	}
-
-	public static class BestOrderedGotoDestNearPatcher
-	{
-		public static bool DestinationIsReserved(this PawnDestinationManager instance, IntVec3 c, Pawn searcher)
-		{
-			return false;
-		}
-
-		public static bool Standable(this IntVec3 c, Map map)
-		{
-			return true;
+			return processor;
 		}
 	}
 }
