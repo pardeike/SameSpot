@@ -2,7 +2,6 @@
 using Harmony;
 using RimWorld;
 using System.Linq;
-using Harmony.ILCopying;
 using System;
 using System.Reflection;
 using UnityEngine;
@@ -44,11 +43,11 @@ namespace SameSpot
 		static HarmonyProcessor Processors(MethodBase original)
 		{
 			var processor = new HarmonyProcessor();
-			processor.AddILProcessor(new MethodReplacer(
+			processor.Add(new MethodReplacer(
 				AccessTools.Method(typeof(PawnDestinationManager), "DestinationIsReserved", new Type[] { typeof(IntVec3), typeof(Pawn) }),
 				AccessTools.Method(typeof(BestOrderedGotoDestNearPatcher), "DestinationIsReserved")
 			));
-			processor.AddILProcessor(new MethodReplacer(
+			processor.Add(new MethodReplacer(
 				AccessTools.Method(typeof(GenGrid), "Standable"),
 				AccessTools.Method(typeof(BestOrderedGotoDestNearPatcher), "Standable")
 			));
