@@ -40,7 +40,7 @@ namespace SameSpot
 			return predicateClass.GetMethods(AccessTools.all).FirstOrDefault(m => m.ReturnType == typeof(bool));
 		}
 
-		static HarmonyProcessor Processors(MethodBase original)
+		static HarmonyProcessor ProcessorFactory(MethodBase original)
 		{
 			var processor = new HarmonyProcessor();
 			processor.Add(new MethodReplacer(
