@@ -5,7 +5,7 @@ using System.Linq;
 using System;
 using System.Reflection;
 using UnityEngine;
-using Harmony.ILCopying;
+using System.Collections.Generic;
 
 namespace SameSpot
 {
@@ -41,18 +41,19 @@ namespace SameSpot
 			return predicateClass.GetMethods(AccessTools.all).FirstOrDefault(m => m.ReturnType == typeof(bool));
 		}
 
-		static HarmonyProcessor ProcessorFactory(MethodBase original)
+		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
-			var processor = new HarmonyProcessor();
-			processor.Add(new MethodReplacer(
-				AccessTools.Method(typeof(PawnDestinationManager), "DestinationIsReserved", new Type[] { typeof(IntVec3), typeof(Pawn) }),
-				AccessTools.Method(typeof(BestOrderedGotoDestNearPatcher), "DestinationIsReserved")
-			));
-			processor.Add(new MethodReplacer(
-				AccessTools.Method(typeof(GenGrid), "Standable"),
-				AccessTools.Method(typeof(BestOrderedGotoDestNearPatcher), "Standable")
-			));
-			return processor;
+			return instructions
+
+				.MethodReplacer(
+					AccessTools.Method(typeof(PawnDestinationManager), "DestinationIsReserved", new Type[] { typeof(IntVec3), typeof(Pawn) }),
+					AccessTools.Method(typeof(BestOrderedGotoDestNearPatcher), "DestinationIsReserved")
+				)
+
+				.MethodReplacer(
+					AccessTools.Method(typeof(GenGrid), "Standable"),
+					AccessTools.Method(typeof(BestOrderedGotoDestNearPatcher), "Standable")
+				);
 		}
 	}
 }
