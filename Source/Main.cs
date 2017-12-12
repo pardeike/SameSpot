@@ -132,9 +132,10 @@ namespace SameSpot
 
 		static bool UsefulColonist(Pawn pawn)
 		{
-			return pawn.drafter != null
+			return pawn.drafter != null && pawn.jobs != null
 				&& pawn.IsColonistPlayerControlled
 				&& pawn.Downed == false
+				&& pawn.drafter.Drafted
 				&& pawn.jobs.IsCurrentJobPlayerInterruptible();
 		}
 
