@@ -149,7 +149,14 @@ namespace SameSpot
 
 		static IEnumerable<Pawn> ColonistsAt(IntVec3 cell)
 		{
-			return Find.VisibleMap.thingGrid.ThingsListAtFast(cell).OfType<Pawn>().Where(UsefulColonist);
+			var map = Find.VisibleMap;
+			if (map != null && cell.InBounds(map))
+			{
+				var things = map.thingGrid.ThingsListAtFast(cell);
+				if (things != null)
+					return things.OfType<Pawn>().Where(UsefulColonist);
+			}
+			return new List<Pawn>();
 		}
 
 		static void MouseDown()
