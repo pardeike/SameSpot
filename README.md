@@ -2,7 +2,7 @@
 
 ### About
 
-Allows multiple colonists to be drafted at the same location
+Allows multiple colonists to be drafted at the same location. Now with Drag'n Drop functionality. Simple drag drafted colonists around to make them reposition. Also: hold SHIFT when right-clicking to order all selected colonists to the same spot.
 
 Powered by [Harmony Patch Library](https://github.com/pardeike/Harmony)
 
