@@ -147,69 +147,76 @@ namespace SameSpot
 				.Select(colonist => new Colonist(colonist)).ToList();
 		}
 
-		static IEnumerable<Pawn> ColonistsAt(IntVec3 cell)
+		static IEnumerable<Pawn> ColonistsAt(Map map, IntVec3 cell)
 		{
-			var map = Find.VisibleMap;
-			if (map != null && cell.InBounds(map))
-			{
-				var things = map.thingGrid.ThingsListAtFast(cell);
-				if (things != null)
-					return things.OfType<Pawn>().Where(UsefulColonist);
-			}
-			return new List<Pawn>();
+			if (cell.InBounds(map) == false)
+				return new List<Pawn>();
+
+			var things = map.thingGrid.ThingsListAtFast(cell);
+			if (things == null)
+				return new List<Pawn>();
+
+			return things.OfType<Pawn>().Where(UsefulColonist);
 		}
 
 		static void MouseDown()
 		{
-			if (SameSpotMod.dragStart.IsValid == false)
-			{
-				var mouseCell = UI.MouseCell();
+			if (SameSpotMod.dragStart.IsValid)
+				return;
 
-				var colonistsUnderMouse = ColonistsAt(mouseCell);
-				if (colonistsUnderMouse.Any())
-				{
-					SameSpotMod.dragStart = mouseCell;
-					SameSpotMod.lastCell = mouseCell;
+			var map = Find.VisibleMap;
+			if (map == null)
+				return;
 
-					var selector = Find.Selector;
-					selector.dragBox.active = false;
+			var mouseCell = UI.MouseCell();
+			var colonistsUnderMouse = ColonistsAt(map, mouseCell);
+			if (colonistsUnderMouse.Any() == false)
+				return;
 
-					if (colonistsUnderMouse.Any(colonist => selector.IsSelected(colonist)) == false)
-						Traverse.Create(selector).Method("SelectUnderMouse").GetValue();
+			SameSpotMod.dragStart = mouseCell;
+			SameSpotMod.lastCell = mouseCell;
 
-					Event.current.Use();
-				}
-			}
+			var selector = Find.Selector;
+			selector.dragBox.active = false;
+
+			if (colonistsUnderMouse.Any(colonist => selector.IsSelected(colonist)) == false)
+				Traverse.Create(selector).Method("SelectUnderMouse").GetValue();
+
+			Event.current.Use();
 		}
 
 		static void MouseDrag()
 		{
+			if (SameSpotMod.dragStart.IsValid == false)
+				return;
+
 			var mouseCell = UI.MouseCell();
-			if (SameSpotMod.dragStart.IsValid && mouseCell != SameSpotMod.lastCell)
+			if (mouseCell == SameSpotMod.lastCell)
+				return;
+
+			if (SameSpotMod.draggedColonists.Count == 0)
+				SameSpotMod.draggedColonists = SelectedColonists();
+
+			if (SameSpotMod.draggedColonists.Count > 0)
 			{
-				if (SameSpotMod.draggedColonists.Count == 0)
-					SameSpotMod.draggedColonists = SelectedColonists();
-
-				if (SameSpotMod.draggedColonists.Count > 0)
+				SameSpotMod.draggedColonists.Do(colonist =>
 				{
-					SameSpotMod.draggedColonists.Do(colonist =>
-					{
-						var newPosition = colonist.startPosition + mouseCell - SameSpotMod.dragStart;
-						colonist.UpdateOrderPos(newPosition);
-					});
+					var newPosition = colonist.startPosition + mouseCell - SameSpotMod.dragStart;
+					colonist.UpdateOrderPos(newPosition);
+				});
 
-					SameSpotMod.lastCell = mouseCell;
-				}
-
-				Event.current.Use();
+				SameSpotMod.lastCell = mouseCell;
 			}
+
+			Event.current.Use();
 		}
 
 		static void MouseUp()
 		{
-			if (SameSpotMod.dragStart.IsValid)
-			{
-				SameSpotMod.draggedColonists.Do(colonist =>
+			if (SameSpotMod.dragStart.IsValid == false)
+				return;
+
+			SameSpotMod.draggedColonists.Do(colonist =>
 				{
 					if (colonist.pawn.Map.pathGrid.Walkable(colonist.designation))
 						if (colonist.startPosition != colonist.designation)
@@ -220,11 +227,10 @@ namespace SameSpot
 						}
 				});
 
-				SameSpotMod.dragStart = IntVec3.Invalid;
-				SameSpotMod.lastCell = IntVec3.Invalid;
-				SameSpotMod.draggedColonists = new List<Colonist>();
-				Event.current.Use();
-			}
+			SameSpotMod.dragStart = IntVec3.Invalid;
+			SameSpotMod.lastCell = IntVec3.Invalid;
+			SameSpotMod.draggedColonists = new List<Colonist>();
+			Event.current.Use();
 		}
 	}
 }
