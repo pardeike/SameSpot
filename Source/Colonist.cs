@@ -30,7 +30,7 @@ namespace SameSpot
 			{
 				var matrix = new Matrix4x4();
 				matrix.SetTRS(designation.ToVector3() + new Vector3(0.5f, 0f, 0.5f), Quaternion.identity, Vector3.one);
-				Graphics.DrawMesh(MeshPool.plane10, matrix, SameSpotMod.markerMaterial, 0);
+				Graphics.DrawMesh(MeshPool.plane10, matrix, Main.markerMaterial, 0);
 			}
 		}
 	}

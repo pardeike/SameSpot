@@ -10,20 +10,37 @@ using Verse.AI;
 
 namespace SameSpot
 {
+	class SameSpotMod : Mod
+	{
+		public static SameSpotModSettings Settings;
+
+		public SameSpotMod(ModContentPack content) : base(content)
+		{
+			Settings = GetSettings<SameSpotModSettings>();
+
+			var harmony = HarmonyInstance.Create("net.pardeike.rimworld.mod.samespot");
+			harmony.PatchAll(Assembly.GetExecutingAssembly());
+		}
+
+		public override void DoSettingsWindowContents(Rect inRect)
+		{
+			Settings.DoWindowContents(inRect);
+		}
+
+		public override string SettingsCategory()
+		{
+			return "SameSpot";
+		}
+	}
+
 	[StaticConstructorOnStartup]
-	public static class SameSpotMod
+	public static class Main
 	{
 		public static IntVec3 lastCell = IntVec3.Invalid;
 		public static IntVec3 dragStart = IntVec3.Invalid;
 		public static List<Colonist> draggedColonists = new List<Colonist>();
 
 		public static Material markerMaterial = MaterialPool.MatFrom("SameSpotMarker");
-
-		static SameSpotMod()
-		{
-			var harmony = HarmonyInstance.Create("net.pardeike.rimworld.mod.samespot");
-			harmony.PatchAll(Assembly.GetExecutingAssembly());
-		}
 
 		public static bool IsReserved(this PawnDestinationReservationManager instance, IntVec3 loc)
 		{
@@ -61,12 +78,12 @@ namespace SameSpot
 
 				.MethodReplacer(
 					AccessTools.Method(typeof(PawnDestinationReservationManager), nameof(PawnDestinationReservationManager.CanReserve), new Type[] { typeof(IntVec3), typeof(Pawn) }),
-					AccessTools.Method(typeof(SameSpotMod), nameof(SameSpotMod.CanReserve))
+					AccessTools.Method(typeof(Main), nameof(Main.CanReserve))
 				)
 
 				.MethodReplacer(
 					AccessTools.Method(typeof(GenGrid), nameof(GenGrid.Standable)),
-					AccessTools.Method(typeof(SameSpotMod), nameof(SameSpotMod.Standable))
+					AccessTools.Method(typeof(Main), nameof(Main.Standable))
 				);
 		}
 	}
@@ -81,12 +98,12 @@ namespace SameSpot
 
 				.MethodReplacer(
 					AccessTools.Method(typeof(PawnDestinationReservationManager), nameof(PawnDestinationReservationManager.IsReserved), new Type[] { typeof(IntVec3) }),
-					AccessTools.Method(typeof(SameSpotMod), nameof(SameSpotMod.IsReserved))
+					AccessTools.Method(typeof(Main), nameof(Main.IsReserved))
 				)
 
 				.MethodReplacer(
 					AccessTools.Method(typeof(GenGrid), nameof(GenGrid.Standable)),
-					AccessTools.Method(typeof(SameSpotMod), nameof(SameSpotMod.Standable))
+					AccessTools.Method(typeof(Main), nameof(Main.Standable))
 				);
 		}
 	}
@@ -97,8 +114,9 @@ namespace SameSpot
 	{
 		static void Postfix()
 		{
-			if (SameSpotMod.dragStart.IsValid)
-				SameSpotMod.draggedColonists.Do(colonist => colonist.DrawDesignation());
+			if (SameSpotMod.Settings.enableDragDrop)
+				if (Main.dragStart.IsValid)
+					Main.draggedColonists.Do(colonist => colonist.DrawDesignation());
 		}
 	}
 
@@ -109,17 +127,20 @@ namespace SameSpot
 		[HarmonyPriority(Priority.First)]
 		static void Prefix()
 		{
-			if (Event.current.button == 0)
-				if (Event.current.type == EventType.MouseDown)
-					if (Event.current.clickCount == 1)
-						MouseDown();
+			if (SameSpotMod.Settings.enableDragDrop)
+				if (Event.current.button == 0)
+					if (Event.current.type == EventType.MouseDown)
+						if (Event.current.clickCount == 1)
+							MouseDown();
 		}
 
 		[HarmonyPriority(Priority.Last)]
 		static void Postfix()
 		{
-			var currentEvent = Event.current;
+			if (SameSpotMod.Settings.enableDragDrop == false)
+				return;
 
+			var currentEvent = Event.current;
 			if (currentEvent.button != 0)
 				return;
 
@@ -161,7 +182,7 @@ namespace SameSpot
 
 		static void MouseDown()
 		{
-			if (SameSpotMod.dragStart.IsValid)
+			if (Main.dragStart.IsValid)
 				return;
 
 			var map = Find.VisibleMap;
@@ -173,8 +194,8 @@ namespace SameSpot
 			if (colonistsUnderMouse.Any() == false)
 				return;
 
-			SameSpotMod.dragStart = mouseCell;
-			SameSpotMod.lastCell = mouseCell;
+			Main.dragStart = mouseCell;
+			Main.lastCell = mouseCell;
 
 			var selector = Find.Selector;
 			selector.dragBox.active = false;
@@ -187,25 +208,25 @@ namespace SameSpot
 
 		static void MouseDrag()
 		{
-			if (SameSpotMod.dragStart.IsValid == false)
+			if (Main.dragStart.IsValid == false)
 				return;
 
 			var mouseCell = UI.MouseCell();
-			if (mouseCell == SameSpotMod.lastCell)
+			if (mouseCell == Main.lastCell)
 				return;
 
-			if (SameSpotMod.draggedColonists.Count == 0)
-				SameSpotMod.draggedColonists = SelectedColonists();
+			if (Main.draggedColonists.Count == 0)
+				Main.draggedColonists = SelectedColonists();
 
-			if (SameSpotMod.draggedColonists.Count > 0)
+			if (Main.draggedColonists.Count > 0)
 			{
-				SameSpotMod.draggedColonists.Do(colonist =>
+				Main.draggedColonists.Do(colonist =>
 				{
-					var newPosition = colonist.startPosition + mouseCell - SameSpotMod.dragStart;
+					var newPosition = colonist.startPosition + mouseCell - Main.dragStart;
 					colonist.UpdateOrderPos(newPosition);
 				});
 
-				SameSpotMod.lastCell = mouseCell;
+				Main.lastCell = mouseCell;
 			}
 
 			Event.current.Use();
@@ -213,10 +234,10 @@ namespace SameSpot
 
 		static void MouseUp()
 		{
-			if (SameSpotMod.dragStart.IsValid == false)
+			if (Main.dragStart.IsValid == false)
 				return;
 
-			SameSpotMod.draggedColonists.Do(colonist =>
+			Main.draggedColonists.Do(colonist =>
 				{
 					if (colonist.pawn.Map.pathGrid.Walkable(colonist.designation))
 						if (colonist.startPosition != colonist.designation)
@@ -227,9 +248,9 @@ namespace SameSpot
 						}
 				});
 
-			SameSpotMod.dragStart = IntVec3.Invalid;
-			SameSpotMod.lastCell = IntVec3.Invalid;
-			SameSpotMod.draggedColonists = new List<Colonist>();
+			Main.dragStart = IntVec3.Invalid;
+			Main.lastCell = IntVec3.Invalid;
+			Main.draggedColonists = new List<Colonist>();
 			Event.current.Use();
 		}
 	}
