@@ -2,7 +2,7 @@
 <ModMetaData>
 	<name>SameSpot</name>
 	<author>Andreas Pardeike</author>
-	<targetVersion>0.18.0</targetVersion>
+	<targetVersion>1.0.0</targetVersion>
 	<description>Allows multiple colonists to be drafted at the same location
 
 Powered by Harmony Patch Library

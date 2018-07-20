@@ -7,6 +7,7 @@ using System.Reflection;
 using UnityEngine;
 using System.Collections.Generic;
 using Verse.AI;
+using System.Reflection.Emit;
 
 namespace SameSpot
 {
@@ -49,7 +50,7 @@ namespace SameSpot
 			return instance.IsReserved(loc);
 		}
 
-		public static bool CanReserve(this PawnDestinationReservationManager instance, IntVec3 c, Pawn searcher)
+		public static bool CanReserve(this PawnDestinationReservationManager instance, IntVec3 c, Pawn searcher, bool draftedOnly)
 		{
 			if (Find.Selector.SelectedObjects.Count == 1) return true;
 			if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) return true;
@@ -60,6 +61,55 @@ namespace SameSpot
 		{
 			return true;
 		}
+
+		public static List<Thing> GetThingList(this IntVec3 c, Map map)
+		{
+			return new List<Thing>();
+		}
+	}
+
+	[HarmonyPatch(typeof(PawnUtility))]
+	[HarmonyPatch("PawnBlockingPathAt")]
+	static class PawnUtility_PawnBlockingPathAt_Patch
+	{
+		static bool Prefix(ref Pawn __result)
+		{
+			__result = null;
+			return false;
+		}
+	}
+
+	[HarmonyPatch(typeof(Pawn_PathFollower))]
+	[HarmonyPatch("WillCollideWithPawnAt")]
+	static class Pawn_PathFollower_WillCollideWithPawnAt_Patch
+	{
+		static bool Prefix(ref bool __result)
+		{
+			__result = false;
+			return false;
+		}
+	}
+
+	[HarmonyPatch(typeof(Pawn_PathFollower))]
+	[HarmonyPatch("PawnCanOccupy")]
+	static class Pawn_PathFollower_PawnCanOccupy_Patch
+	{
+		static bool Prefix(ref bool __result)
+		{
+			__result = true;
+			return false;
+		}
+	}
+
+	[HarmonyPatch(typeof(JobDriver_Goto))]
+	[HarmonyPatch("TryMakePreToilReservations")]
+	static class JobDriver_Goto_TryMakePreToilReservations_Patch
+	{
+		static bool Prefix(ref bool __result)
+		{
+			__result = true;
+			return false;
+		}
 	}
 
 	[HarmonyPatch]
@@ -68,8 +118,12 @@ namespace SameSpot
 		static MethodBase TargetMethod()
 		{
 			var predicateClass = typeof(RCellFinder).GetNestedTypes(AccessTools.all)
-				.FirstOrDefault(t => t.FullName.Contains("BestOrderedGotoDestNear"));
-			return predicateClass.GetMethods(AccessTools.all).FirstOrDefault(m => m.ReturnType == typeof(bool));
+				.FirstOrDefault(t => t.FullName.Contains(nameof(RCellFinder.BestOrderedGotoDestNear)));
+			var predicateMethod = predicateClass.GetMethods(AccessTools.all)
+				.FirstOrDefault(m => m.GetParameters().First().ParameterType == typeof(IntVec3) && m.ReturnType == typeof(bool));
+			if (predicateMethod == null)
+				Log.Error("Cannot find predicate method of " + nameof(RCellFinder.BestOrderedGotoDestNear));
+			return predicateMethod;
 		}
 
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -77,13 +131,32 @@ namespace SameSpot
 			return instructions
 
 				.MethodReplacer(
-					AccessTools.Method(typeof(PawnDestinationReservationManager), nameof(PawnDestinationReservationManager.CanReserve), new Type[] { typeof(IntVec3), typeof(Pawn) }),
+					AccessTools.Method(typeof(PawnDestinationReservationManager), nameof(PawnDestinationReservationManager.CanReserve)),
 					AccessTools.Method(typeof(Main), nameof(Main.CanReserve))
 				)
 
 				.MethodReplacer(
 					AccessTools.Method(typeof(GenGrid), nameof(GenGrid.Standable)),
 					AccessTools.Method(typeof(Main), nameof(Main.Standable))
+				)
+
+				.MethodReplacer(
+					AccessTools.Method(typeof(GridsUtility), nameof(GridsUtility.GetThingList)),
+					AccessTools.Method(typeof(Main), nameof(Main.GetThingList))
+				);
+		}
+	}
+
+	[HarmonyPatch(typeof(JobGiver_MoveToStandable))]
+	[HarmonyPatch("TryGiveJob")]
+	static class JobGiver_MoveToStandable_TryGiveJob_Patch
+	{
+		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			return instructions
+				.MethodReplacer(
+					AccessTools.Method(typeof(GridsUtility), nameof(GridsUtility.GetThingList)),
+					AccessTools.Method(typeof(Main), nameof(Main.GetThingList))
 				);
 		}
 	}
@@ -109,7 +182,7 @@ namespace SameSpot
 	}
 
 	[HarmonyPatch(typeof(SelectionDrawer))]
-	[HarmonyPatch("DrawSelectionOverlays")]
+	[HarmonyPatch(nameof(SelectionDrawer.DrawSelectionOverlays))]
 	static class SelectionDrawer_DrawSelectionOverlays_Patch
 	{
 		static void Postfix()
@@ -121,7 +194,7 @@ namespace SameSpot
 	}
 
 	[HarmonyPatch(typeof(MainTabsRoot))]
-	[HarmonyPatch("HandleLowPriorityShortcuts")]
+	[HarmonyPatch(nameof(MainTabsRoot.HandleLowPriorityShortcuts))]
 	static class MainTabsRoot_HandleLowPriorityShortcuts_Patch
 	{
 		[HarmonyPriority(Priority.First)]
@@ -185,7 +258,7 @@ namespace SameSpot
 			if (Main.dragStart.IsValid)
 				return;
 
-			var map = Find.VisibleMap;
+			var map = Find.CurrentMap;
 			if (map == null)
 				return;
 
