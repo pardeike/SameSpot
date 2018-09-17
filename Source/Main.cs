@@ -1,11 +1,11 @@
-﻿using Verse;
-using Harmony;
+﻿using Harmony;
 using RimWorld;
-using System.Linq;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using System.Collections.Generic;
+using Verse;
 using Verse.AI;
 
 namespace SameSpot
@@ -20,6 +20,7 @@ namespace SameSpot
 
 			var harmony = HarmonyInstance.Create("net.pardeike.rimworld.mod.samespot");
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
+			FireStats.Trigger(true);
 		}
 
 		public override void DoSettingsWindowContents(Rect inRect)
@@ -64,6 +65,16 @@ namespace SameSpot
 		public static List<Thing> GetThingList(this IntVec3 c, Map map)
 		{
 			return new List<Thing>();
+		}
+	}
+
+	[HarmonyPatch(typeof(Game))]
+	[HarmonyPatch("FinalizeInit")]
+	static class Game_FinalizeInit_Patch
+	{
+		static void Postfix()
+		{
+			FireStats.Trigger(false);
 		}
 	}
 
