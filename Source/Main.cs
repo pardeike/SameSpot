@@ -20,7 +20,6 @@ namespace SameSpot
 
 			var harmony = HarmonyInstance.Create("net.pardeike.rimworld.mod.samespot");
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
-			FireStats.Trigger(true);
 		}
 
 		public override void DoSettingsWindowContents(Rect inRect)
@@ -74,7 +73,7 @@ namespace SameSpot
 	{
 		static void Postfix()
 		{
-			FireStats.Trigger(false);
+			ModCounter.Trigger();
 		}
 	}
 
