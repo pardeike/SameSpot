@@ -81,10 +81,14 @@ namespace SameSpot
 	[HarmonyPatch("PawnBlockingPathAt")]
 	static class PawnUtility_PawnBlockingPathAt_Patch
 	{
-		static bool Prefix(ref Pawn __result)
+		static bool Prefix(ref Pawn __result, Pawn forPawn)
 		{
-			__result = null;
-			return false;
+			if (forPawn.IsColonist || SameSpotMod.Settings.hardcoreMode)
+			{
+				__result = null;
+				return false;
+			}
+			return true;
 		}
 	}
 
@@ -92,10 +96,14 @@ namespace SameSpot
 	[HarmonyPatch("WillCollideWithPawnAt")]
 	static class Pawn_PathFollower_WillCollideWithPawnAt_Patch
 	{
-		static bool Prefix(ref bool __result)
+		static bool Prefix(Pawn ___pawn, ref bool __result)
 		{
-			__result = false;
-			return false;
+			if (___pawn.IsColonist || SameSpotMod.Settings.hardcoreMode)
+			{
+				__result = false;
+				return false;
+			}
+			return true;
 		}
 	}
 
@@ -103,10 +111,14 @@ namespace SameSpot
 	[HarmonyPatch("PawnCanOccupy")]
 	static class Pawn_PathFollower_PawnCanOccupy_Patch
 	{
-		static bool Prefix(ref bool __result)
+		static bool Prefix(Pawn ___pawn, ref bool __result)
 		{
-			__result = true;
-			return false;
+			if (___pawn.IsColonist || SameSpotMod.Settings.hardcoreMode)
+			{
+				__result = true;
+				return false;
+			}
+			return true;
 		}
 	}
 
@@ -114,10 +126,14 @@ namespace SameSpot
 	[HarmonyPatch("TryMakePreToilReservations")]
 	static class JobDriver_Goto_TryMakePreToilReservations_Patch
 	{
-		static bool Prefix(ref bool __result)
+		static bool Prefix(JobDriver_Goto __instance, ref bool __result)
 		{
-			__result = true;
-			return false;
+			if (__instance.pawn.IsColonist || SameSpotMod.Settings.hardcoreMode)
+			{
+				__result = true;
+				return false;
+			}
+			return true;
 		}
 	}
 
