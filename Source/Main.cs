@@ -58,7 +58,8 @@ namespace SameSpot
 
 		public static bool Standable(this IntVec3 c, Map map)
 		{
-			return true;
+			var edifice = c.GetEdifice(map);
+			return edifice == null;
 		}
 
 		public static List<Thing> GetThingList(this IntVec3 c, Map map)
@@ -111,10 +112,14 @@ namespace SameSpot
 	[HarmonyPatch("PawnCanOccupy")]
 	static class Pawn_PathFollower_PawnCanOccupy_Patch
 	{
-		static bool Prefix(Pawn ___pawn, ref bool __result)
+		static bool Prefix(Pawn ___pawn, IntVec3 c, ref bool __result)
 		{
 			if (___pawn.IsColonist || SameSpotMod.Settings.hardcoreMode)
 			{
+				var edifice = c.GetEdifice(___pawn.Map);
+				if (edifice != null)
+					return true;
+
 				__result = true;
 				return false;
 			}

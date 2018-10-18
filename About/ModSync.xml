@@ -2,7 +2,7 @@
 <ModSyncNinjaData>
   <ID>da39eefe-71cc-4419-a91c-884eb1c6ea39</ID>
   <ModName>SameSpot</ModName>
-  <Version>1.1.3.0</Version>
+  <Version>1.1.4.0</Version>
   <SaveBreaking>False</SaveBreaking>
   <Host name="Github">
     <Owner>pardeike</Owner>
