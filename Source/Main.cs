@@ -42,6 +42,12 @@ namespace SameSpot
 
 		public static Material markerMaterial = MaterialPool.MatFrom("SameSpotMarker");
 
+		public static bool CustomStandable(this IntVec3 c, Map map)
+		{
+			var edifice = c.GetEdifice(map);
+			return edifice == null || (edifice as Building_Door) != null;
+		}
+
 		public static bool IsReserved(this PawnDestinationReservationManager instance, IntVec3 loc)
 		{
 			if (Find.Selector.SelectedObjects.Count == 1) return false;
@@ -58,8 +64,7 @@ namespace SameSpot
 
 		public static bool Standable(this IntVec3 c, Map map)
 		{
-			var edifice = c.GetEdifice(map);
-			return edifice == null;
+			return c.CustomStandable(map);
 		}
 
 		public static List<Thing> GetThingList(this IntVec3 c, Map map)
@@ -116,8 +121,7 @@ namespace SameSpot
 		{
 			if (___pawn.IsColonist || SameSpotMod.Settings.hardcoreMode)
 			{
-				var edifice = c.GetEdifice(___pawn.Map);
-				if (edifice != null)
+				if (c.CustomStandable(___pawn.Map) == false)
 					return true;
 
 				__result = true;
