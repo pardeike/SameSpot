@@ -44,6 +44,9 @@ namespace SameSpot
 
 		public static bool CustomStandable(this IntVec3 c, Map map)
 		{
+			if (SameSpotMod.Settings.walkableMode)
+				return map.pathGrid.Walkable(c);
+
 			var edifice = c.GetEdifice(map);
 			return edifice == null || (edifice as Building_Door) != null;
 		}
@@ -80,6 +83,22 @@ namespace SameSpot
 		static void Postfix()
 		{
 			ModCounter.Trigger();
+		}
+	}
+
+	[HarmonyPatch(typeof(GenGrid))]
+	[HarmonyPatch("Standable")]
+	static class GenGrid_Standable_Patch
+	{
+		[HarmonyPriority(10000)]
+		static bool Prefix(IntVec3 c, Map map, ref bool __result)
+		{
+			if (SameSpotMod.Settings.walkableMode)
+			{
+				__result = map.pathGrid.Walkable(c);
+				return false;
+			}
+			return true;
 		}
 	}
 
