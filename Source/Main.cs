@@ -368,7 +368,7 @@ namespace SameSpot
 					if (colonist.pawn.Map.pathGrid.Walkable(colonist.designation))
 						if (colonist.startPosition != colonist.designation)
 						{
-							var job = new Job(JobDefOf.Goto, colonist.designation);
+							var job = JobMaker.MakeJob(JobDefOf.Goto, colonist.designation);
 							if (colonist.pawn.jobs.IsCurrentJobPlayerInterruptible())
 								_ = colonist.pawn.jobs.TryTakeOrderedJob(job);
 						}
