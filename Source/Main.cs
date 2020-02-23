@@ -1,4 +1,4 @@
-﻿using Harmony;
+﻿using HarmonyLib;
 using RimWorld;
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ namespace SameSpot
 		{
 			Settings = GetSettings<SameSpotModSettings>();
 
-			var harmony = HarmonyInstance.Create("net.pardeike.rimworld.mod.samespot");
+			var harmony = new Harmony("net.pardeike.rimworld.mod.samespot");
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
 		}
 
@@ -60,6 +60,7 @@ namespace SameSpot
 
 		public static bool CanReserve(this PawnDestinationReservationManager instance, IntVec3 c, Pawn searcher, bool draftedOnly)
 		{
+			_ = draftedOnly;
 			if (Find.Selector.SelectedObjects.Count == 1) return true;
 			if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) return true;
 			return instance.CanReserve(c, searcher);
@@ -72,6 +73,8 @@ namespace SameSpot
 
 		public static List<Thing> GetThingList(this IntVec3 c, Map map)
 		{
+			_ = c;
+			_ = map;
 			return new List<Thing>();
 		}
 	}
@@ -170,13 +173,10 @@ namespace SameSpot
 	{
 		static MethodBase TargetMethod()
 		{
-			var predicateClass = typeof(RCellFinder).GetNestedTypes(AccessTools.all)
-				.FirstOrDefault(t => t.FullName.Contains(nameof(RCellFinder.BestOrderedGotoDestNear)));
-			var predicateMethod = predicateClass.GetMethods(AccessTools.all)
-				.FirstOrDefault(m => m.GetParameters().First().ParameterType == typeof(IntVec3) && m.ReturnType == typeof(bool));
-			if (predicateMethod == null)
-				Log.Error("Cannot find predicate method of " + nameof(RCellFinder.BestOrderedGotoDestNear));
-			return predicateMethod;
+			return typeof(RCellFinder)
+				.GetNestedTypes(AccessTools.all)
+				.SelectMany(t => AccessTools.GetDeclaredMethods(t))
+				.First(m => m.Name.Contains("<" + nameof(RCellFinder.BestOrderedGotoDestNear)));
 		}
 
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -327,7 +327,7 @@ namespace SameSpot
 			selector.dragBox.active = false;
 
 			if (colonistsUnderMouse.Any(colonist => selector.IsSelected(colonist)) == false)
-				Traverse.Create(selector).Method("SelectUnderMouse").GetValue();
+				_ = Traverse.Create(selector).Method("SelectUnderMouse").GetValue();
 
 			Event.current.Use();
 		}
@@ -370,7 +370,7 @@ namespace SameSpot
 						{
 							var job = new Job(JobDefOf.Goto, colonist.designation);
 							if (colonist.pawn.jobs.IsCurrentJobPlayerInterruptible())
-								colonist.pawn.jobs.TryTakeOrderedJob(job);
+								_ = colonist.pawn.jobs.TryTakeOrderedJob(job);
 						}
 				});
 

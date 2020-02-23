@@ -3,9 +3,10 @@
 	<name>SameSpot</name>
 	<author>Andreas Pardeike</author>
 	<supportedVersions>
-		<li>0.19</li>
 		<li>1.0</li>
+		<li>1.1</li>
 	</supportedVersions>
+	<packageId>brrainz.samespot</packageId>
 	<description>Allows multiple colonists to be drafted at the same location
 
 Powered by Harmony Patch Library
