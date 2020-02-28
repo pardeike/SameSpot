@@ -83,7 +83,7 @@ namespace SameSpot
 	[HarmonyPatch("FinalizeInit")]
 	static class Game_FinalizeInit_Patch
 	{
-		static void Postfix()
+		public static void Postfix()
 		{
 			ModCounter.Trigger();
 		}
@@ -94,7 +94,7 @@ namespace SameSpot
 	static class GenGrid_Standable_Patch
 	{
 		[HarmonyPriority(10000)]
-		static bool Prefix(IntVec3 c, Map map, ref bool __result)
+		public static bool Prefix(IntVec3 c, Map map, ref bool __result)
 		{
 			if (SameSpotMod.Settings.walkableMode)
 			{
@@ -109,7 +109,7 @@ namespace SameSpot
 	[HarmonyPatch("PawnBlockingPathAt")]
 	static class PawnUtility_PawnBlockingPathAt_Patch
 	{
-		static bool Prefix(ref Pawn __result, Pawn forPawn)
+		public static bool Prefix(ref Pawn __result, Pawn forPawn)
 		{
 			if (forPawn.IsColonist || SameSpotMod.Settings.hardcoreMode)
 			{
@@ -124,7 +124,7 @@ namespace SameSpot
 	[HarmonyPatch("WillCollideWithPawnAt")]
 	static class Pawn_PathFollower_WillCollideWithPawnAt_Patch
 	{
-		static bool Prefix(Pawn ___pawn, ref bool __result)
+		public static bool Prefix(Pawn ___pawn, ref bool __result)
 		{
 			if (___pawn.IsColonist || SameSpotMod.Settings.hardcoreMode)
 			{
@@ -139,7 +139,7 @@ namespace SameSpot
 	[HarmonyPatch("PawnCanOccupy")]
 	static class Pawn_PathFollower_PawnCanOccupy_Patch
 	{
-		static bool Prefix(Pawn ___pawn, IntVec3 c, ref bool __result)
+		public static bool Prefix(Pawn ___pawn, IntVec3 c, ref bool __result)
 		{
 			if (___pawn.IsColonist || SameSpotMod.Settings.hardcoreMode)
 			{
@@ -157,7 +157,7 @@ namespace SameSpot
 	[HarmonyPatch("TryMakePreToilReservations")]
 	static class JobDriver_Goto_TryMakePreToilReservations_Patch
 	{
-		static bool Prefix(JobDriver_Goto __instance, ref bool __result)
+		public static bool Prefix(JobDriver_Goto __instance, ref bool __result)
 		{
 			if (__instance.pawn.IsColonist || SameSpotMod.Settings.hardcoreMode)
 			{
@@ -171,7 +171,7 @@ namespace SameSpot
 	[HarmonyPatch]
 	static class RCellFinder_BestOrderedGotoDestNear_Patch
 	{
-		static MethodBase TargetMethod()
+		public static MethodBase TargetMethod()
 		{
 			return typeof(RCellFinder)
 				.GetNestedTypes(AccessTools.all)
@@ -179,7 +179,7 @@ namespace SameSpot
 				.First(m => m.Name.Contains("<" + nameof(RCellFinder.BestOrderedGotoDestNear)));
 		}
 
-		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return instructions
 
@@ -204,7 +204,7 @@ namespace SameSpot
 	[HarmonyPatch("TryGiveJob")]
 	static class JobGiver_MoveToStandable_TryGiveJob_Patch
 	{
-		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return instructions
 				.MethodReplacer(
@@ -218,7 +218,7 @@ namespace SameSpot
 	[HarmonyPatch("TryGivePlayJob")]
 	static class JoyGiver_InteractBuildingInteractionCell_TryGivePlayJob_Patch
 	{
-		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return instructions
 
@@ -238,7 +238,7 @@ namespace SameSpot
 	[HarmonyPatch(nameof(SelectionDrawer.DrawSelectionOverlays))]
 	static class SelectionDrawer_DrawSelectionOverlays_Patch
 	{
-		static void Postfix()
+		public static void Postfix()
 		{
 			if (SameSpotMod.Settings.enableDragDrop)
 				if (Main.dragStart.IsValid)
@@ -251,7 +251,7 @@ namespace SameSpot
 	static class MainTabsRoot_HandleLowPriorityShortcuts_Patch
 	{
 		[HarmonyPriority(Priority.First)]
-		static void Prefix()
+		public static void Prefix()
 		{
 			if (SameSpotMod.Settings.enableDragDrop)
 				if (Event.current.button == 0)
@@ -261,7 +261,7 @@ namespace SameSpot
 		}
 
 		[HarmonyPriority(Priority.Last)]
-		static void Postfix()
+		public static void Postfix()
 		{
 			if (SameSpotMod.Settings.enableDragDrop == false)
 				return;
