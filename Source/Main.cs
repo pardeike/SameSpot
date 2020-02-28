@@ -19,7 +19,7 @@ namespace SameSpot
 			Settings = GetSettings<SameSpotModSettings>();
 
 			var harmony = new Harmony("net.pardeike.rimworld.mod.samespot");
-			harmony.PatchAll(Assembly.GetExecutingAssembly());
+			harmony.PatchAll();
 		}
 
 		public override void DoSettingsWindowContents(Rect inRect)
