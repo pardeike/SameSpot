@@ -8,6 +8,7 @@ namespace SameSpot
 		public bool enableDragDrop = true;
 		public bool hardcoreMode = false;
 		public bool walkableMode = false;
+		public int colonistsPerCell = 0;
 
 		public override void ExposeData()
 		{
@@ -15,16 +16,25 @@ namespace SameSpot
 			Scribe_Values.Look(ref enableDragDrop, "enableDragDrop", true);
 			Scribe_Values.Look(ref hardcoreMode, "hardcoreMode", false);
 			Scribe_Values.Look(ref walkableMode, "walkableMode", false);
+			Scribe_Values.Look(ref colonistsPerCell, "colonistsPerCell", 0);
+		}
+
+		void NumberEntryLabeled(Listing_Standard list, string label, ref int num, int lineCount = 1)
+		{
+			var txt = list.TextEntryLabeled(label, "" + num, lineCount);
+			try { num = int.Parse(txt); } catch { }
 		}
 
 		public void DoWindowContents(Rect inRect)
 		{
-			var list = new Listing_Standard { ColumnWidth = (inRect.width - 34f) / 2f };
+			var list = new Listing_Standard { ColumnWidth = inRect.width / 2f };
 			list.Begin(inRect);
 			list.Gap(12f);
 			list.CheckboxLabeled("Enable Drag'n Drop", ref enableDragDrop);
 			list.CheckboxLabeled("SameSpot also for enemies", ref hardcoreMode);
 			list.CheckboxLabeled("Make walkable also standable", ref walkableMode);
+			_ = list.Label($"Maximum colonists per cell: {(colonistsPerCell == 0 ? "unlimited" : "" + colonistsPerCell)}");
+			colonistsPerCell = (int)Mathf.Min(20, list.Slider(colonistsPerCell + 0.5f, 0, 21));
 			list.End();
 		}
 	}

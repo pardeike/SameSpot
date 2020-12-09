@@ -40,7 +40,9 @@ namespace SameSpot
 		public static IntVec3 dragStart = IntVec3.Invalid;
 		public static List<Colonist> draggedColonists = new List<Colonist>();
 
-		public static Material markerMaterial = MaterialPool.MatFrom("SameSpotMarker");
+		public static readonly Material markerMaterial = MaterialPool.MatFrom("SameSpotMarker");
+		static readonly AccessTools.FieldRef<PawnDestinationReservationManager, Dictionary<Faction, PawnDestinationReservationManager.PawnDestinationSet>> reservedDestinationsRef = AccessTools.FieldRefAccess<PawnDestinationReservationManager, Dictionary<Faction, PawnDestinationReservationManager.PawnDestinationSet>>("reservedDestinations");
+		public static readonly FastInvokeHandler SelectUnderMouseDelegate = MethodInvoker.GetHandler(AccessTools.Method(typeof(Selector), "SelectUnderMouse"));
 
 		public static bool CustomStandable(this IntVec3 c, Map map)
 		{
@@ -51,24 +53,19 @@ namespace SameSpot
 			return edifice == null || (edifice as Building_Door) != null;
 		}
 
-		public static bool IsReserved(this PawnDestinationReservationManager instance, IntVec3 loc)
+		public static bool CustomIsReserved(this PawnDestinationReservationManager instance, IntVec3 loc)
 		{
-			if (Find.Selector.SelectedObjects.Count == 1) return false;
-			if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) return false;
-			return instance.IsReserved(loc);
+			if (SameSpotMod.Settings.colonistsPerCell == 0) return false;
+			var count = reservedDestinationsRef(instance).SelectMany(pair => pair.Value.list).Count(res => res.obsolete == false && res.target == loc);
+			return count >= SameSpotMod.Settings.colonistsPerCell;
 		}
 
-		public static bool CanReserve(this PawnDestinationReservationManager instance, IntVec3 c, Pawn searcher, bool draftedOnly)
+		public static bool CustomCanReserve(this PawnDestinationReservationManager instance, IntVec3 c, Pawn searcher, bool draftedOnly)
 		{
 			_ = draftedOnly;
-			if (Find.Selector.SelectedObjects.Count == 1) return true;
-			if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) return true;
-			return instance.CanReserve(c, searcher);
-		}
-
-		public static bool Standable(this IntVec3 c, Map map)
-		{
-			return c.CustomStandable(map);
+			if (SameSpotMod.Settings.colonistsPerCell == 0) return true;
+			var count = reservedDestinationsRef(instance).SelectMany(pair => pair.Value.list).Count(res => res.obsolete == false && res.claimant != searcher && res.target == c);
+			return count < SameSpotMod.Settings.colonistsPerCell;
 		}
 
 		public static List<Thing> GetThingList(this IntVec3 c, Map map)
@@ -118,6 +115,17 @@ namespace SameSpot
 			}
 			return true;
 		}
+
+		public static void Postfix(ref Pawn __result, IntVec3 c, Pawn forPawn)
+		{
+			if (__result != null || SameSpotMod.Settings.colonistsPerCell == 0)
+				return;
+
+			var map = forPawn.Map;
+			var otherPawns = map.thingGrid.ThingsListAtFast(c).OfType<Pawn>().Where(pawn => pawn != forPawn && (pawn.IsColonist || SameSpotMod.Settings.hardcoreMode));
+			if (otherPawns.Count() >= SameSpotMod.Settings.colonistsPerCell)
+				__result = otherPawns.First();
+		}
 	}
 
 	[HarmonyPatch(typeof(Pawn_PathFollower))]
@@ -159,7 +167,7 @@ namespace SameSpot
 	{
 		public static bool Prefix(JobDriver_Goto __instance, ref bool __result)
 		{
-			if (__instance.pawn.IsColonist || SameSpotMod.Settings.hardcoreMode)
+			if (SameSpotMod.Settings.colonistsPerCell == 0 && (__instance.pawn.IsColonist || SameSpotMod.Settings.hardcoreMode))
 			{
 				__result = true;
 				return false;
@@ -176,7 +184,7 @@ namespace SameSpot
 			return typeof(RCellFinder)
 				.GetNestedTypes(AccessTools.all)
 				.SelectMany(t => AccessTools.GetDeclaredMethods(t))
-				.First(m => m.Name.Contains("<" + nameof(RCellFinder.BestOrderedGotoDestNear)));
+				.First(m => m.Name.Contains($"<{nameof(RCellFinder.BestOrderedGotoDestNear)}"));
 		}
 
 		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -185,12 +193,12 @@ namespace SameSpot
 
 				.MethodReplacer(
 					AccessTools.Method(typeof(PawnDestinationReservationManager), nameof(PawnDestinationReservationManager.CanReserve)),
-					AccessTools.Method(typeof(Main), nameof(Main.CanReserve))
+					AccessTools.Method(typeof(Main), nameof(Main.CustomCanReserve))
 				)
 
 				.MethodReplacer(
 					AccessTools.Method(typeof(GenGrid), nameof(GenGrid.Standable)),
-					AccessTools.Method(typeof(Main), nameof(Main.Standable))
+					AccessTools.Method(typeof(Main), nameof(Main.CustomStandable))
 				)
 
 				.MethodReplacer(
@@ -224,12 +232,12 @@ namespace SameSpot
 
 				.MethodReplacer(
 					AccessTools.Method(typeof(PawnDestinationReservationManager), nameof(PawnDestinationReservationManager.IsReserved), new Type[] { typeof(IntVec3) }),
-					AccessTools.Method(typeof(Main), nameof(Main.IsReserved))
+					AccessTools.Method(typeof(Main), nameof(Main.CustomIsReserved))
 				)
 
 				.MethodReplacer(
 					AccessTools.Method(typeof(GenGrid), nameof(GenGrid.Standable)),
-					AccessTools.Method(typeof(Main), nameof(Main.Standable))
+					AccessTools.Method(typeof(Main), nameof(Main.CustomStandable))
 				);
 		}
 	}
@@ -327,7 +335,7 @@ namespace SameSpot
 			selector.dragBox.active = false;
 
 			if (colonistsUnderMouse.Any(colonist => selector.IsSelected(colonist)) == false)
-				_ = Traverse.Create(selector).Method("SelectUnderMouse").GetValue();
+				_ = Main.SelectUnderMouseDelegate(selector);
 
 			Event.current.Use();
 		}
