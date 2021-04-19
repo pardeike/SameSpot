@@ -15,6 +15,6 @@
   </loadBefore>
   <loadAfter>
   </loadAfter>
-  <manifestUri>https://raw.githubusercontent.com/pardeike/SameSpot/master/About/Manifest.xml</manifestUri>
+  <manifestUri>https://raw.githubusercontent.com/pardeike/SameSpot/latest/About/Manifest.xml</manifestUri>
   <downloadUri>https://github.com/pardeike/SameSpot/releases/latest</downloadUri>
 </Manifest>
