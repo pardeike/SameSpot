@@ -41,8 +41,6 @@ namespace SameSpot
 		public static List<Colonist> draggedColonists = new List<Colonist>();
 
 		public static readonly Material markerMaterial = MaterialPool.MatFrom("SameSpotMarker");
-		static readonly AccessTools.FieldRef<PawnDestinationReservationManager, Dictionary<Faction, PawnDestinationReservationManager.PawnDestinationSet>> reservedDestinationsRef = AccessTools.FieldRefAccess<PawnDestinationReservationManager, Dictionary<Faction, PawnDestinationReservationManager.PawnDestinationSet>>("reservedDestinations");
-		public static readonly FastInvokeHandler SelectUnderMouseDelegate = MethodInvoker.GetHandler(AccessTools.Method(typeof(Selector), "SelectUnderMouse"));
 
 		public static bool CustomStandable(this IntVec3 c, Map map)
 		{
@@ -56,7 +54,7 @@ namespace SameSpot
 		public static bool CustomIsReserved(this PawnDestinationReservationManager instance, IntVec3 loc)
 		{
 			if (SameSpotMod.Settings.colonistsPerCell == 0) return false;
-			var count = reservedDestinationsRef(instance).SelectMany(pair => pair.Value.list).Count(res => res.obsolete == false && res.target == loc);
+			var count = instance.reservedDestinations.SelectMany(pair => pair.Value.list).Count(res => res.obsolete == false && res.target == loc);
 			return count >= SameSpotMod.Settings.colonistsPerCell;
 		}
 
@@ -64,7 +62,7 @@ namespace SameSpot
 		{
 			_ = draftedOnly;
 			if (SameSpotMod.Settings.colonistsPerCell == 0) return true;
-			var count = reservedDestinationsRef(instance).SelectMany(pair => pair.Value.list).Count(res => res.obsolete == false && res.claimant != searcher && res.target == c);
+			var count = instance.reservedDestinations.SelectMany(pair => pair.Value.list).Count(res => res.obsolete == false && res.claimant != searcher && res.target == c);
 			return count < SameSpotMod.Settings.colonistsPerCell;
 		}
 
@@ -335,7 +333,7 @@ namespace SameSpot
 			selector.dragBox.active = false;
 
 			if (colonistsUnderMouse.Any(colonist => selector.IsSelected(colonist)) == false)
-				_ = Main.SelectUnderMouseDelegate(selector);
+				selector.SelectUnderMouse();
 
 			Event.current.Use();
 		}

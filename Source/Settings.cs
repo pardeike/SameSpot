@@ -19,12 +19,6 @@ namespace SameSpot
 			Scribe_Values.Look(ref colonistsPerCell, "colonistsPerCell", 0);
 		}
 
-		void NumberEntryLabeled(Listing_Standard list, string label, ref int num, int lineCount = 1)
-		{
-			var txt = list.TextEntryLabeled(label, "" + num, lineCount);
-			try { num = int.Parse(txt); } catch { }
-		}
-
 		public void DoWindowContents(Rect inRect)
 		{
 			var list = new Listing_Standard { ColumnWidth = inRect.width / 2f };
