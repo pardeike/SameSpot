@@ -45,7 +45,7 @@ namespace SameSpot
 		public static bool CustomStandable(this IntVec3 c, Map map)
 		{
 			if (SameSpotMod.Settings.walkableMode)
-				return map.pathGrid.Walkable(c);
+				return GenGrid.Walkable(c, map);
 
 			var edifice = c.GetEdifice(map);
 			return edifice == null || (edifice as Building_Door) != null;
@@ -74,8 +74,7 @@ namespace SameSpot
 		}
 	}
 
-	[HarmonyPatch(typeof(Game))]
-	[HarmonyPatch("FinalizeInit")]
+	[HarmonyPatch(typeof(Game), nameof(Game.FinalizeInit))]
 	static class Game_FinalizeInit_Patch
 	{
 		public static void Postfix()
@@ -84,8 +83,7 @@ namespace SameSpot
 		}
 	}
 
-	[HarmonyPatch(typeof(GenGrid))]
-	[HarmonyPatch("Standable")]
+	[HarmonyPatch(typeof(GenGrid), nameof(GenGrid.Standable))]
 	static class GenGrid_Standable_Patch
 	{
 		[HarmonyPriority(10000)]
@@ -93,15 +91,14 @@ namespace SameSpot
 		{
 			if (SameSpotMod.Settings.walkableMode)
 			{
-				__result = map.pathGrid.Walkable(c);
+				__result = GenGrid.Walkable(c, map);
 				return false;
 			}
 			return true;
 		}
 	}
 
-	[HarmonyPatch(typeof(PawnUtility))]
-	[HarmonyPatch("PawnBlockingPathAt")]
+	[HarmonyPatch(typeof(PawnUtility), nameof(PawnUtility.PawnBlockingPathAt))]
 	static class PawnUtility_PawnBlockingPathAt_Patch
 	{
 		public static bool Prefix(ref Pawn __result, Pawn forPawn)
@@ -126,8 +123,7 @@ namespace SameSpot
 		}
 	}
 
-	[HarmonyPatch(typeof(Pawn_PathFollower))]
-	[HarmonyPatch("WillCollideWithPawnAt")]
+	[HarmonyPatch(typeof(Pawn_PathFollower), nameof(Pawn_PathFollower.WillCollideWithPawnAt))]
 	static class Pawn_PathFollower_WillCollideWithPawnAt_Patch
 	{
 		public static bool Prefix(Pawn ___pawn, ref bool __result)
@@ -141,8 +137,7 @@ namespace SameSpot
 		}
 	}
 
-	[HarmonyPatch(typeof(Pawn_PathFollower))]
-	[HarmonyPatch("PawnCanOccupy")]
+	[HarmonyPatch(typeof(Pawn_PathFollower), nameof(Pawn_PathFollower.PawnCanOccupy))]
 	static class Pawn_PathFollower_PawnCanOccupy_Patch
 	{
 		public static bool Prefix(Pawn ___pawn, IntVec3 c, ref bool __result)
@@ -159,8 +154,7 @@ namespace SameSpot
 		}
 	}
 
-	[HarmonyPatch(typeof(JobDriver_Goto))]
-	[HarmonyPatch("TryMakePreToilReservations")]
+	[HarmonyPatch(typeof(JobDriver_Goto), nameof(JobDriver_Goto.TryMakePreToilReservations))]
 	static class JobDriver_Goto_TryMakePreToilReservations_Patch
 	{
 		public static bool Prefix(JobDriver_Goto __instance, ref bool __result)
@@ -206,8 +200,7 @@ namespace SameSpot
 		}
 	}
 
-	[HarmonyPatch(typeof(JobGiver_MoveToStandable))]
-	[HarmonyPatch("TryGiveJob")]
+	[HarmonyPatch(typeof(JobGiver_MoveToStandable), nameof(JobGiver_MoveToStandable.TryGiveJob))]
 	static class JobGiver_MoveToStandable_TryGiveJob_Patch
 	{
 		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -220,8 +213,7 @@ namespace SameSpot
 		}
 	}
 
-	[HarmonyPatch(typeof(JoyGiver_InteractBuildingInteractionCell))]
-	[HarmonyPatch("TryGivePlayJob")]
+	[HarmonyPatch(typeof(JoyGiver_InteractBuildingInteractionCell), nameof(JoyGiver_InteractBuildingInteractionCell.TryGivePlayJob))]
 	static class JoyGiver_InteractBuildingInteractionCell_TryGivePlayJob_Patch
 	{
 		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -371,7 +363,7 @@ namespace SameSpot
 
 			Main.draggedColonists.Do(colonist =>
 				{
-					if (colonist.pawn.Map.pathGrid.Walkable(colonist.designation))
+					if (GenGrid.Walkable(colonist.designation, colonist.pawn.Map))
 						if (colonist.startPosition != colonist.designation)
 						{
 							var job = JobMaker.MakeJob(JobDefOf.Goto, colonist.designation);
