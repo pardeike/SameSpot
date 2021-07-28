@@ -74,15 +74,6 @@ namespace SameSpot
 		}
 	}
 
-	[HarmonyPatch(typeof(Game), nameof(Game.FinalizeInit))]
-	static class Game_FinalizeInit_Patch
-	{
-		public static void Postfix()
-		{
-			ModCounter.Trigger();
-		}
-	}
-
 	[HarmonyPatch(typeof(GenGrid), nameof(GenGrid.Standable))]
 	static class GenGrid_Standable_Patch
 	{
