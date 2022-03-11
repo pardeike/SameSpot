@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using Brrainz;
+using HarmonyLib;
 using RimWorld;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,8 @@ namespace SameSpot
 
 			var harmony = new Harmony("net.pardeike.rimworld.mod.samespot");
 			harmony.PatchAll();
+
+			CrossPromotion.Install(76561197973010050);
 		}
 
 		public override void DoSettingsWindowContents(Rect inRect)
